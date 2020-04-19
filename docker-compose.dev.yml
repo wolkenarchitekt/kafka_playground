@@ -5,16 +5,101 @@ services:
     volumes:
     - ./website:/var/www/html/
 
-  website_monitor:
+  http_check_producer:
     build:
-      context: website_monitor
+      context: http_check_producer
       dockerfile: Dockerfile.dev
-    volumes:
-    - ./website_monitor/website_monitor:/app
+    command: [
+      "/wait-for-it.sh",
+      "-t", "60",
+      "kafka:8081",
+      "--",
+      "http_check_producer", "-d", "run", "--url", "${CHECK_URL}"]
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_GROUP_ID=mygroup
+      - KAFKA_TOPIC=http_check_producer
+      - KAFKA_SCHEMA_REGISTRY_URL=http://kafka:8081
+      - KAFKA_AVRO_KEY_SCHEMA=/avro_schema/check_result_key.avsc
+      - KAFKA_AVRO_VALUE_SCHEMA=/avro_schema/check_result_value.avsc
+    depends_on:
+      - kafka
+      - website
 
-  website_monitor_db:
+  http_check_consumer:
     build:
-      context: website_monitor_db
+      context: http_check_consumer
       dockerfile: Dockerfile.dev
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_GROUP_ID=mygroup
+      - KAFKA_TOPIC=http_check_producer
+      - KAFKA_SCHEMA_REGISTRY_URL=http://kafka:8081
+
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=http_check
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PORT=5432
+    depends_on:
+      - kafka
+      - postgres
+
+  postgres:
+    image: postgres:12.2
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=http_check
     volumes:
-    - ./website_monitor_db/website_monitor_db:/app
+      - ./postgres/schema:/docker-entrypoint-initdb.d/
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - default
+
+  kafka:
+    image: lensesio/fast-data-dev
+    links:
+      - postgres
+    ports:
+      # Central Web UI
+      - 3030:3030
+      # Kafka Broker
+      - 9092:9092
+      # Schema registry
+      - 8081:8081
+      # Kafka REST Proxy
+      - 8082:8082
+      # Kafka Connect Distributed
+      - 8083:8083
+      # Zookeeper
+      - 2181:2181
+    networks:
+      - default
+
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.integration_tests
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_GROUP_ID=mygroup
+      - KAFKA_TOPIC=http_check_producer
+      - KAFKA_SCHEMA_REGISTRY_URL=http://kafka:8081
+
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=http_check
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PORT=5432
+    command: [
+      "/wait-for-it.sh",
+      "-t", "60",
+      "kafka:8081",
+      "--",
+      "pytest"]
+    depends_on:
+      - kafka
+      - postgres
+      - website

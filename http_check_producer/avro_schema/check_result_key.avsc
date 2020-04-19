@@ -1,0 +1,8 @@
+{
+   "namespace": "de.ingofischer",
+   "name": "key",
+   "type": "record",
+   "fields" : [
+     {"name" : "timestamp", "type" : "string"}
+   ]
+}

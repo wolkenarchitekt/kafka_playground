@@ -1,6 +1,4 @@
-FROM ubuntu:bionic
-RUN apt-get update --fix-missing
-RUN apt-get install nginx -y
-COPY index.html /var/www/html/
+FROM nginx:1.17.10
+COPY index.html /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx","-g","daemon off;"]

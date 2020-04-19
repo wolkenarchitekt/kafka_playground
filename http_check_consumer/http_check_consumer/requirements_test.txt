@@ -1,0 +1,8 @@
+flake8==3.7.9
+ipdb==0.13.2
+ipython==7.13.0
+mypy==0.770
+pytest==5.4.1
+pytest-cov==2.8.1
+pytest-freezegun==0.4.1
+pytest-socket==0.3.4
