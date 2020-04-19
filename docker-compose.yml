@@ -1,0 +1,62 @@
+version: "3.7"
+
+services:
+  website:
+    build: website
+    ports:
+      - "${NGINX_PORT}:80"
+    networks:
+      - default
+
+  website_monitor:
+    build: website_monitor
+    networks:
+      - default
+#    command: website_monitor -d run --url http://website --match-regex "Hello"
+    volumes:
+      - /home/ifischer/.ipython:/root/.ipython:Z
+      - ./avro_schema/:/avro_schema:ro
+
+  website_monitor_db:
+    build: website_monitor_db
+    networks:
+      - default
+#    command: website_monitor_db -d run
+    volumes:
+      - /home/ifischer/.ipython:/root/.ipython:Z
+
+  postgres:
+    image: postgres:12.2
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=website_status
+    volumes:
+      - ./postgres/01_create_table_website_status.sql:/docker-entrypoint-initdb.d/01_create_table_website_status.sql
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - default
+
+  kafka:
+    image: lensesio/fast-data-dev
+    links:
+      - postgres
+    ports:
+      # Central Web UI
+      - 3030:3030
+      # Kafka Broker
+      - 9092:9092
+      # Schema registry
+      - 8081:8081
+      # Kafka REST Proxy
+      - 8082:8082
+      # Kafka Connect Distributed
+      - 8083:8083
+      # Zookeeper
+      - 2181:2181
+    networks:
+      - default
+
+networks:
+  default:

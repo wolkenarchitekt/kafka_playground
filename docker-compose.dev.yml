@@ -1,0 +1,20 @@
+version: "3.7"
+
+services:
+  website:
+    volumes:
+    - ./website:/var/www/html/
+
+  website_monitor:
+    build:
+      context: website_monitor
+      dockerfile: Dockerfile.dev
+    volumes:
+    - ./website_monitor/website_monitor:/app
+
+  website_monitor_db:
+    build:
+      context: website_monitor_db
+      dockerfile: Dockerfile.dev
+    volumes:
+    - ./website_monitor_db/website_monitor_db:/app

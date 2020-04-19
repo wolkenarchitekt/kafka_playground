@@ -1,0 +1,5 @@
+avro-python3==1.9.2.1
+click==7.1.1
+confluent-kafka==1.4.0
+psycopg2==2.8.5
+requests==2.23.0

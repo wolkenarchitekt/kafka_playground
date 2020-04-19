@@ -1,0 +1,10 @@
+{
+   "namespace": "de.ingofischer",
+   "name": "value",
+   "type": "record",
+   "fields" : [
+     {"name" : "status_code", "type" : "int"},
+     {"name" : "response_time_seconds", "type" : "float"},
+     {"name" : "matches_regex", "type" : ["null", "boolean"], "default": null}
+   ]
+}
